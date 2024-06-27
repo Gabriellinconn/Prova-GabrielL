@@ -7,7 +7,6 @@ builder.Services.AddDbContext<AppDataContext>();
 
 var app = builder.Build();
 
-
 app.MapGet("/", () => "Prova A1");
 
 //ENDPOINTS DE CATEGORIA
@@ -55,21 +54,53 @@ app.MapPost("/tarefas/cadastrar", ([FromServices] AppDataContext ctx, [FromBody]
 });
 
 //PUT: http://localhost:5273/tarefas/alterar/{id}
-app.MapPut("/tarefas/alterar/{id}", ([FromServices] AppDataContext ctx, [FromRoute] string id) =>
+app.MapPut("/tarefas/alterar/{id}", ([FromServices] AppDataContext ctx, [FromBody] Tarefa tarefaAlterada, [FromRoute] string id) =>
 {
-    //Implementar a alteração do status da tarefa
+    Tarefa? tarefa = ctx.Tarefas.Find(id);
+    if (tarefa is null)
+    {
+        return Results.NotFound("Tarefa não encontrada!");
+    }
+    tarefa.Titulo = tarefaAlterada.Titulo;
+    tarefa.Descricao = tarefaAlterada.Descricao;
+    tarefa.Categoria = tarefaAlterada.Categoria;
+    tarefa.Status = tarefaAlterada.Status;
+
+    ctx.Tarefas.Update(tarefa);
+    ctx.SaveChanges();
+    return Results.Ok("Tarefa alterada!");
 });
 
 //GET: http://localhost:5273/tarefas/naoconcluidas
-app.MapGet("/tarefas/naoconcluidas", ([FromServices] AppDataContext ctx) =>
+app.MapGet("/tarefas/naoconcluidas", ([FromServices] AppDataContext ctx, Tarefa tarefasNC) =>
 {
-    //Implementar a listagem de tarefas não concluídas
+    foreach(var tarefa in ctx.Tarefas){
+        if (tarefa.Status != "Concluida"){
+                    return Results.Ok(ctx.Tarefas.ToList());
+
+        }
+    }
+    {
+    }
+    return Results.NotFound("Nenhuma tarefa em andamento encontrada");
 });
+
+
 
 //GET: http://localhost:5273/tarefas/concluidas
 app.MapGet("/tarefas/concluidas", ([FromServices] AppDataContext ctx) =>
 {
-    //Implementar a listagem de tarefas concluídas
+    
+    foreach(var tarefa in ctx.Tarefas){
+        if (tarefa.Status == "Concluida"){
+                    return Results.Ok(ctx.Tarefas.ToList());
+
+        }
+    }
+    {
+    }
+    return Results.NotFound("Nenhuma tarefa concluida encontrada");
 });
+
 
 app.Run();
